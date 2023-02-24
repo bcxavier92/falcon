@@ -1,0 +1,73 @@
+body {
+    background-color: #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#setup-card {
+    text-align: center;
+}
+
+#version-info {
+    color: #555;
+}
+
+#setup-form {
+    text-align: left;
+    margin-top: 10px;
+}
+
+#setup-form input[type="text"],
+#setup-form input[type="password"],
+#setup-form input[type="email"] {
+    display: block;
+    margin: 0 auto;
+    width: calc(100% - 14px);
+    margin-bottom: 14px;
+}
+
+.section-title {
+    font-size: 1.2em;
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+#button-row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+#button-row button,
+#button-row input[type="submit"] {
+    margin: 0 10px;
+    width: 6em;
+}
+
+#response-wrapper {
+    text-align: center;
+}
+
+#response {
+    font-size: 0.8em;
+    color: #555;
+    margin-bottom: 14px;
+}
+
+#section-2,
+#section-3 {
+    display: none;
+}
+
+#button-back,
+#button-submit {
+    display: none;
+}
+
+.card {
+    width: 325px;
+}
