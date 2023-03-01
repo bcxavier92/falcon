@@ -17,8 +17,7 @@
                 }
             }
 
-            // Falcon is not being loaded in a setup script, so check if falcon either needs to be setup or start up like usual
-            // If this is a setup script, nothing should be done
+            // Falcon should not run init functions if FnSkipInit == true
             if(!$skipInit) { 
                 // Checking if falcon is setup also loads the harness
                 if(FnSetup::hasBeenSetup()) {
