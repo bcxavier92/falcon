@@ -59,6 +59,8 @@
     }
 
     // Get columns
+    // SQL Injection isn't actually possible here even though prepared statements aren't being used,
+    // because all category names have been previously sanitized
     $stmtGetColumns = $conn->prepare("DESCRIBE fn_so_$cat;");
     $stmtGetColumns->execute();
     $cols = $stmtGetColumns->fetchAll(PDO::FETCH_COLUMN);
