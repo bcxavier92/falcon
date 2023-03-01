@@ -52,6 +52,7 @@
     <a id="add-setting-button" href="#">+ Add Setting</a>
 </div>
 
+<script src="../script/admin.js"></script>
 <script>
     <?php echo $jsSettings; ?>
     $(document).ready(function() {

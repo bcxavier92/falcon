@@ -1,0 +1,29 @@
+#new-object-name-label {
+    font-weight: 500;
+}
+
+#new-object-name {
+    margin-left: 10px;
+    width: 300px;
+}
+
+#new-site-object {
+    margin: 10px 0 15px 0;
+}
+
+#create-site-object-button {
+    margin-right: 15px;
+}
+
+.object-structure {
+    margin-bottom: 20px;
+}
+
+.object-structure tr:nth-child(even) {
+    background-color: #eee;
+}
+
+.object-structure th, 
+.object-structure td {
+    padding: 5px 40px 5px 5px;
+}

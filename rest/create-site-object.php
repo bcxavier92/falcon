@@ -1,4 +1,24 @@
 <?php
+    /**
+     * Description: Creates an individual site object
+     * Method: Post
+     * 
+     * Parameters:
+     * cat - Category to create site object in
+     * _val-{columnName} - Value for specified column name
+     * fn-token - Falcon CSRF token
+     * 
+     * Response:
+     * success - Boolean signifying object created
+     * message - Descriptive message
+     * 
+     * Response Codes:
+     * 500 - Error creating object
+     * 400 - Bad request
+     * 201 - Successful creation
+     * 
+     */
+
     require "../core/falcon.php";
 
     header('Content-type: application/json');
@@ -21,134 +41,84 @@
         Falcon::restDie(400, ["success" => false, "message" => "Invalid CSRF token"]);
     }
 
-    // Check object name defined
-    if(!Falcon::isDefined($_POST, "object-name")) {
-        Falcon::restDie(400, ["success" => false, "message" => "Object name is required"]);
+    // Check category name defined
+    if(!Falcon::isDefined($_POST, "cat")) {
+        Falcon::restDie(400, ["success" => false, "message" => "Category name is required"]);
     }
 
-    // Check object name characters
-    $objectName = trim($_POST["object-name"]);
-    if(!preg_match("/^[a-z0-9_]+$/i", $objectName)) {
-        Falcon::restDie(400, ["success" => false, "message" => "Invalid characters in object name. Use (a-Z0-9_)"]);
-    }
-
-    // Check object name min length
-    if(strlen($objectName) < 2) {
-        Falcon::restDie(400, ["success" => false, "message" => "Object name length must be at least 2 characters"]);
-    }
-
-    // Check object name max length
-    if(strlen($objectName) > 32) {
-        Falcon::restDie(400, ["success" => false, "message" => "Object name too long. Stay at or below 32 characters."]);
-    }
-
-    $keys = [];
-    $siteObjectTypes = [];
-    foreach(array_keys($_POST) as $postKey) {
-        // If post key starts with "_key-", it is a setting key
-        if(substr($postKey, 0, 5) === "_key-") {
-            $key = substr($postKey, 5);
-            // Key length must be 2 characters
-            if(strlen($key) < 2) {
-                Falcon::restDie(400, ["success" => false, "message" => "Key length must be at least 2 characters"]);
-            }
-
-            // Allow only (a-Z0-9_) for key names
-            if(!preg_match("/^[a-z0-9_]+$/i", $key)) {
-                Falcon::restDie(400, ["success" => false, "message" => "Invalid characters in key. Use (a-Z0-9_)"]);
-            }
-
-            // Prevent duplicate keys
-            if(in_array($key, array_keys($keys))) {
-                Falcon::restDie(400, ["success" => false, "message" => "Duplicate key found"]);
-            }
-
-            // Limit key length to 32
-            if(strlen($key) > 32) {
-                Falcon::restDie(400, ["success" => false, "message" => "Key length too long. Stay at or below 32 characters."]);
-            }
-
-            // Validate type
-            $type = $_POST[$postKey];
-            $validTypes = [
-                "object-ref" => "varchar(32)", 
-                "lang-ref" => "varchar(255)", 
-                "file" => "varchar(32)", 
-                "short-text" => "varchar(255)", 
-                "med-text" => "varchar(2048)", 
-                "long-text" => "text(65535)", 
-                "huge-text" => "mediumtext(16777215)", 
-                "int" => "int(4)", 
-                "big-int" => "bigint(8)", 
-                "decimal" => "decimal(28, 10)", 
-                "boolean" => "tinyint(1)"
-            ];
-
-            if(!in_array($type, array_keys($validTypes))) {
-                Falcon::restDie(400, ["success" => false, "message" => "Invalid type"]);
-            }
-
-            // Push to object types array
-            $siteObjectTypes[$key] = [$type, $validTypes[$type]];
-        }
-    }
-
-    if(!count($keys)) {
-        Falcon::restDie(400, ["success" => false, "message" => "Keys must be provided"]);
-    }
-
+    // Check category name exists and get structure
     $conn = Falcon::getMysqlConnection();
-    
-    // Check that site object name is unique
-    $stmtCheckObjectName = $conn->prepare("SELECT COUNT(*) FROM fn_site_objects WHERE object_name=?;");
-    $stmtCheckObjectName->execute([
-        $objectName
-    ]);
+    $cat = trim($_POST["cat"]);
+    $stmtGetStructure = $conn->prepare("SELECT structure FROM fn_site_object_categories WHERE category_name=?;");
+    $stmtGetStructure->execute([$cat]);
+    $structure = $stmtGetStructure->fetch(PDO::FETCH_COLUMN);
 
-    $objectExists = $stmtCheckObjectName->fetch(PDO::FETCH_COLUMN);
-    if($objectExists) {
-        Falcon::restDie(400, ["success" => false, "message" => "Site object by this name already exists"]);
+    // If there is no structure site object does not exist
+    if(!$structure) {
+        Falcon::restDie(400, ["success" => false, "message" => "Object category does not exist"]);
     }
 
-    // PDO not necessary because all values are strictly sanitized
-    $strInsertObject = "INSERT INTO fn_site_objects (object_name, structure) VALUES ('$objectName', '";
-    // PDO can't be used for executing this statement, but all parameter were strictly sanatized to (a-Z0-9_) earlier
-    $strCreateObjectTable = "CREATE TABLE fn_so_$objectName (";
+    // Get columns
+    $stmtGetColumns = $conn->prepare("DESCRIBE fn_so_$cat;");
+    $stmtGetColumns->execute();
+    $cols = $stmtGetColumns->fetchAll(PDO::FETCH_COLUMN);
 
-    $started = false;
-    foreach($siteObjectTypes as $key => $type) {
-        $falconType = $type[0];
-        $mysqlType = $type[1];
+    // Check columns exist
+    if(!$cols) {
+        Falcon::restDie(400, ["success" => false, "message" => "Could not get columns from site object table"]);
+    }
 
-        if($started) {
-            $strInsertObject .= ",";
-            $strCreateObjectTable .= ",";
+    // Check columns array length > 0 just to be safe
+    if(!count($cols)) {
+        Falcon::restDie(400, ["success" => false, "message" => "Could not get columns from site object table"]);
+    }
+
+    // Iterate over inputs and set their values
+    $colsStr = "";
+    $valsStr = "";
+    $valsArr = [];
+    $types = explode(",", $structure);
+    $allNull = true;
+    $i = 0;
+    foreach($types as $type) {
+        $col = $cols[$i + 1];
+        $substrCol = substr($col, 1);
+        $val = null;
+
+        // If value is defined then use it, otherwise just keep value as null since all site object columns are nullable
+        if(Falcon::isDefined($_POST, "_val-$substrCol")) {
+            // Validate type
+            $val = $_POST["_val-$substrCol"] . ""; // Make sure this is a string by adding "" on the end
+            if(!Falcon::validateSiteObjectType($type, $val)) {
+                Falcon::restDie(400, ["success" => false, "message" => "Invalid value for type on input \"$substrCol\""]);
+            }
+
+            $allNull = false;
         }
 
-        $strInsertObject .= $falconType;
-        // Underscore is added to the beginning of the key to prevent conflict with mysql keywords
-        $strCreateObjectTable .= "_$key $mysqlType";
+        // Append column and value to query
+        if($i > 0) {
+            $colsStr .= ",";
+            $valsStr .= ",";
+        }
 
-        $started = true;
+        $colsStr .= $col;
+        $valsStr .= "?";
+        array_push($valsArr, $val);
+
+        $i++;
     }
 
-    $strInsertObject .= "');";
-    $strCreateObjectTable .= ");";
-
-    // Execute insert object
-    $stmtInsertObject = $conn->prepare($strInsertObject);
-    $successInsertObject = $stmtInsertObject->execute();
-
-    if(!$successInsertObject) {
-        Falcon::restDie(500, ["success" => false, "message" => "CRITICAL: Failed to insert object into Falcon site objects table"]);
+    if($allNull) {
+        Falcon::restDie(400, ["success" => false, "message" => "All inputs cannot be empty"]);
     }
+    
+    // Insert values
+    $stmtInsertObject = $conn->prepare("INSERT INTO fn_so_$cat ($colsStr) VALUES ($valsStr);");
+    $insertSuccess = $stmtInsertObject->execute($valsArr);
 
-    // Execute create object table
-    $stmtCreateObjectTable = $conn->prepare($strCreateObjectTable);
-    $successCreateObjectTable = $stmtCreateObjectTable->execute();
-
-    if(!$successCreateObjectTable) {
-        Falcon::restDie(500, ["success" => false, "message" => "CRITICAL: Failed to create new site object table, but was inserted into Falcon site objects table. This will cause the object to not work properly. Please delete it and try again."]);
+    if(!$insertSuccess) {
+        Falcon::restDie(500, ["success" => false, "message" => "Critical: Could not create site object"]);
     }
 
     Falcon::restDie(201, ["success" => true, "message" => "success"]);

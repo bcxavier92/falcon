@@ -16,9 +16,18 @@ h1 {
 }
 
 h2 {
-    font-size: 1.5em;
+    font-size: 1.4em;
     letter-spacing: 1px;
-    margin: 0 0 10px 0;
+    margin: 0;
+    padding: 0;
+    font-weight: 500;
+    color: #333;
+}
+
+h3 {
+    font-size: 1.1em;
+    letter-spacing: 1px;
+    margin: 0;
     padding: 0;
     font-weight: 500;
     color: #333;
@@ -49,7 +58,7 @@ select {
     padding: 5px 7px;
 }
 
-input:read-only {
+input[type="text"]:read-only {
     background-color: #f5f5f5;
     cursor: not-allowed;
 }
@@ -64,6 +73,15 @@ input[type="submit"] {
     border: none;
     cursor: pointer;
     min-width: 80px;
+}
+
+th,
+td {
+    text-align: left;
+}
+
+th {
+    font-weight: 500;
 }
 
 #nav {
@@ -113,6 +131,26 @@ input[type="submit"] {
     margin: 40px auto 40px auto;
 }
 
+.card-2-container {
+    display: flex;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+.card-2-container .card {
+    width: calc(50% - 50px - 20px);
+    margin-bottom: 40px;
+}
+
+.card-2-container .card:nth-child(odd) {
+    margin-right: 40px;
+}
+
+.card-2-container .card .spoiler-header .spoiler-arrow {
+    position: relative;
+    left: 40px;
+}
+
 .card {
     background-color: #fff;
     border-radius: 8px;
@@ -121,6 +159,7 @@ input[type="submit"] {
 
 .full-card {
     width: calc(100% - 50px);
+    margin-bottom: 40px;
 }
 
 .spoiler {
@@ -133,6 +172,17 @@ input[type="submit"] {
     flex-direction: row;
     justify-content: space-between;
     cursor: pointer;
+}
+
+.spoiler-header-inline * {
+    display: inline;
+}
+
+.spoiler-header-inline img {
+    height: 1.4em;
+    position: relative;
+    top: 3px;
+    left: 5px;
 }
 
 .spoiler-arrow {
@@ -152,11 +202,6 @@ input[type="submit"] {
 
 #settings-table {
     margin-bottom: 10px;
-}
-
-.col-4-edit-table th,
-#settings-table td {
-    text-align: left;
 }
 
 .col-4-edit-table input[type="text"],

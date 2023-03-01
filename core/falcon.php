@@ -374,12 +374,12 @@
         static function startSession() {
             $settings = Falcon::getSettings();
             $cookieParams = [
-                'path' => '/',
-                'lifetime' => $settings["session_lifetime"],
-                'domain' => $settings["session_domain"],
-                'secure' => $settings["session_secure"],
-                'httponly' => $settings["session_httponly"],
-                'samesite' => $settings["session_samesite"]
+                "path" => "/",
+                "lifetime" => $settings["session_lifetime"],
+                "domain" => $settings["session_domain"],
+                "secure" => $settings["session_secure"],
+                "httponly" => $settings["session_httponly"],
+                "samesite" => $settings["session_samesite"]
             ];
             session_set_cookie_params($cookieParams);
 
@@ -439,6 +439,91 @@
                 if($token === $t) return true;
             }
             return false;
+        }
+
+        // Site object type validation function
+        // Returns true or false
+        static function validateSiteObjectType($type, $val) {
+            $val = "$val"; // Make sure $val is string for testing
+            $valid = false;
+            switch($type) {
+                case "object-ref":
+                    if(
+                        preg_match("/^[a-z0-9_]+$/i", $val) &&
+                        strlen($val) >= 2 &&
+                        strlen($val) <= 32
+                    ) $valid = true;
+                    break;
+                case "lang-ref":
+                    if(
+                        strlen($val) <= 255
+                    ) $valid = true;
+                    break;
+                case "file":
+                    if(
+                        strlen($val) === 32 &&
+                        preg_match("/^[a-fA-F0-9]+$/", $val)
+                    ) $valid = true;
+                    break;
+                case "short-text":
+                    if(
+                        strlen($val) <= 255
+                    ) $valid = true;
+                    break;
+                case "med-text":
+                    if(
+                        strlen($val) <= 2048
+                    ) $valid = true;
+                    break;
+                case "long-text":
+                    if(
+                        strlen($val) <= 65535
+                    ) $valid = true;
+                    break;
+                case "huge-text":
+                    if(
+                        strlen($val) <= 16777215
+                    ) $valid = true;
+                    break;
+                case "int":
+                    // Allow one negative sign at the beginning by checking for it and removing it before
+                    // checking with ctype_digit
+                    $testVal = $val;
+                    if(substr($val, 0, 1) === "-") {
+                        $testVal = substr($testVal, 1);
+                    }
+
+                    if(
+                        ctype_digit($testVal) // Ctype digit allows numbers only, no decimals or negative signs
+                    ) $valid = true;
+                    break;
+                case "big-int":
+                    // Allow one negative sign at the beginning by checking for it and removing it before
+                    // checking with ctype_digit
+                    $testVal = $val;
+                    if(substr($val, 0, 1) === "-") {
+                        $testVal = substr($testVal, 1);
+                    }
+
+                    if(
+                        ctype_digit($testVal) // Ctype digit allows numbers only, no decimals or negative signs
+                    ) $valid = true;
+                    break;
+                case "decimal":
+                    if(
+                        is_numeric($val)
+                    ) $valid = true;
+                    break;
+                case "boolean":
+                    if(
+                        $val === "true" ||
+                        $val === "false"
+                    ) $valid = true;
+                    break;
+                default:
+                    break;
+            }
+            return $valid;
         }
 
         // Write a new setting to fn_settings

@@ -3,8 +3,8 @@
 
     /**
      * Database defaults
-     * 
      */
+
     define("FnMysqlDefaults", [
         "fn_users" => [
             "added_version" => "0.1",
@@ -38,11 +38,20 @@
                 ]
             ]
         ],
-        "fn_site_objects" => [
+        "fn_site_object_categories" => [
             "added_version" => "0.1",
             "columns" => [
-                ["object_name", "VARCHAR(32) PRIMARY KEY"],
-                ["structure", "VARCHAR(1024)"]
+                ["category_name", "VARCHAR(32) PRIMARY KEY"],
+                ["structure", "VARCHAR(1024)"],
+                ["label", "VARCHAR(32) NOT NULL"]
+            ]
+        ],
+        "fn_uploads" => [
+            "added_version" => "0.1",
+            "columns" => [
+                ["uuid", "VARCHAR(32) PRIMARY KEY"],
+                ["file_path", "VARCHAR(2048) NOT NULL"],
+                ["alt_text", "VARCHAR(255)"]
             ]
         ]
     ]);
@@ -169,7 +178,7 @@
         // Redirects to setup page
         static function redirectSetup() {
             // Gets the url for the core folder
-            $setupUrl = str_replace("\\", '/', "http://" . $_SERVER['HTTP_HOST'] . substr(__DIR__, strlen($_SERVER['DOCUMENT_ROOT'])));
+            $setupUrl = str_replace("\\", "/", "http://" . $_SERVER["HTTP_HOST"] . substr(__DIR__, strlen($_SERVER['DOCUMENT_ROOT'])));
 
             // Removes "core" at end and adds "/admin/setup.php"
             $setupUrl = substr($setupUrl, 0, strlen($setupUrl) - 5) . "/admin/setup.php";
